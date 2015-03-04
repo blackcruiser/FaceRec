@@ -7,30 +7,39 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:id="@+id/imageView"
-        android:layout_gravity="center_horizontal"
         android:cropToPadding="true"
-        android:maxHeight="200dp"
+        android:background="@android:color/background_light"
+        android:scaleType="centerInside"
+        android:minHeight="240dp"
+        android:minWidth="320dp"
+        android:layout_gravity="center"
+        android:maxHeight="240dp"
         android:maxWidth="320dp"
-        android:minHeight="120dp"
-        android:minWidth="160dp"
-        android:background="@android:color/background_light" />
+        android:longClickable="true"
+        android:layout_marginBottom="20dp" />
 
     <Button
-        android:layout_width="wrap_content"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="@string/Button_Open"
-        android:id="@+id/Button_Open"
+        android:text="@string/Button_OpenFile"
+        android:id="@+id/Button_OpenFile"
         android:layout_gravity="center_horizontal"
         android:height="40dp"
-        android:minWidth="160dp"
         android:longClickable="false"
         android:clickable="false" />
 
     <Button
-        android:layout_width="wrap_content"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/Button_OpenCamera"
+        android:id="@+id/Button_OpenCamera"
+        android:layout_gravity="center_horizontal"
+        android:height="40dp" />
+
+    <Button
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="@string/Button_Detect"
-        android:id="@+id/button"
-        android:layout_gravity="center_horizontal"
-        android:minWidth="160dp" />
+        android:id="@+id/Button_Detect"
+        android:layout_gravity="center_horizontal" />
 </LinearLayout>
