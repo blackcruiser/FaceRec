@@ -7,7 +7,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:id="@+id/imageView"
-        android:cropToPadding="true"
+        android:cropToPadding="false"
         android:background="@android:color/background_light"
         android:scaleType="centerInside"
         android:minHeight="240dp"
@@ -15,8 +15,9 @@
         android:layout_gravity="center"
         android:maxHeight="240dp"
         android:maxWidth="320dp"
-        android:longClickable="true"
-        android:layout_marginBottom="20dp" />
+        android:longClickable="false"
+        android:layout_marginBottom="20dp"
+        android:adjustViewBounds="true" />
 
     <Button
         android:layout_width="match_parent"
