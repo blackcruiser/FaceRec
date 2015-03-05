@@ -7,6 +7,8 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Message;
 import android.provider.MediaStore;
 import android.view.Gravity;
 import android.view.View;
@@ -17,17 +19,22 @@ import android.widget.Toast;
 import org.opencv.android.BaseLoaderCallback;
 import org.opencv.android.LoaderCallbackInterface;
 import org.opencv.android.OpenCVLoader;
-import org.opencv.core.Mat;
-import org.opencv.highgui.Highgui;
 
-import java.io.FileNotFoundException;
+import java.io.InputStream;
+import java.lang.ref.WeakReference;
 
 public class MainActivity extends Activity
 {
+    final static int LOAD_MODEL_SUCCESS = 0;
+    final static int FACE_DETECT_SUCCESS = 1;
 
     private Button btnOpenFile, btnOpenCamera, btnDetect;
     private ImageView imageView;
-    private boolean isLoadLibSuccess = false;
+
+    private Bitmap bmImg = null, bmResult = null;
+    private FaceRec faceRec = null;
+
+    private boolean isModelLoaded = false;
 
 
     private BaseLoaderCallback mLoaderCallback = new BaseLoaderCallback(this)
@@ -44,7 +51,17 @@ public class MainActivity extends Activity
                     toast.setGravity(Gravity.BOTTOM, 0, 0);
                     toast.show();
 
-                    isLoadLibSuccess = true;
+                    new Thread(new Runnable()
+                    {
+                        @Override
+                        public void run()
+                        {
+                            faceRec = new FaceRec();
+                            Message msg = new Message();
+                            msg.what = LOAD_MODEL_SUCCESS;
+                            handler.sendMessage(msg);
+                        }
+                    }).start();
                 }
                 break;
                 default:
@@ -53,13 +70,37 @@ public class MainActivity extends Activity
                     toast.setGravity(Gravity.CENTER, 0, 0);
                     toast.show();
 
-                    isLoadLibSuccess = false;
                     finish();
                 }
                 break;
             }
         }
     };
+
+    static class MyHandler extends Handler {
+        WeakReference<MainActivity> mActivity;
+
+        MyHandler(MainActivity activity) {
+            mActivity = new WeakReference<MainActivity>(activity);
+        }
+
+        @Override
+        public void handleMessage(Message msg) {
+            MainActivity theActivity = mActivity.get();
+            switch (msg.what)
+            {
+                case MainActivity.LOAD_MODEL_SUCCESS:
+                    theActivity.isModelLoaded = true;
+                    break;
+                case MainActivity.FACE_DETECT_SUCCESS:
+                    theActivity.imageView.setImageBitmap(theActivity.bmResult);
+                    break;
+                default:
+                    break;
+            }
+        }
+    };
+    MyHandler handler = new MyHandler(this);
 
     @Override
     protected void onCreate(Bundle savedInstanceState)
@@ -94,6 +135,31 @@ public class MainActivity extends Activity
             }
         });
         btnDetect = (Button) findViewById(R.id.Button_Detect);
+        btnDetect.setOnClickListener(new View.OnClickListener()
+        {
+            @Override
+            public void onClick(View view)
+            {
+                if (!isModelLoaded)
+                {
+                    Toast toast = Toast.makeText(getApplicationContext(), "Model is not loaded!", Toast.LENGTH_SHORT);
+                    toast.setGravity(Gravity.BOTTOM, 0, 0);
+                    toast.show();
+                }
+                new Thread(new Runnable()
+                {
+                    @Override
+                    public void run()
+                    {
+                        bmResult = faceRec.detect(bmImg);
+                        Message msg = new Message();
+                        msg.what = FACE_DETECT_SUCCESS;
+                        handler.sendMessage(msg);
+                    }
+                }).start();
+
+            }
+        });
     }
 
     @Override
@@ -119,15 +185,17 @@ public class MainActivity extends Activity
 
                     if (fileType.startsWith("image"))
                     {
-                        Bitmap bitmap;
                         try
                         {
-                            bitmap = BitmapFactory.decodeStream(resolver.openInputStream(uri));
-                        } catch (FileNotFoundException e)
+                            InputStream is = resolver.openInputStream(uri);
+                            bmImg = BitmapFactory.decodeStream(is);
+                            is.close();
+                        } catch (Exception e)
                         {
+                            bmImg = null;
                             break;
                         }
-                        imageView.setImageBitmap(bitmap);
+                        imageView.setImageBitmap(bmImg);
                     }
 
                     break;
@@ -138,17 +206,24 @@ public class MainActivity extends Activity
 
                     if (extra != null)
                     {
-                        Bitmap bitmap = extra.getParcelable("data");
-                        imageView.setImageBitmap(bitmap);
+                        bmImg = extra.getParcelable("data");
+                        imageView.setImageBitmap(bmImg);
+                    }
+                    else
+                    {
+                        bmImg = null;
                     }
 
                     break;
                 }
                 default:
+                {
+                    bmImg = null;
                     break;
-
+                }
             }
         }
         super.onActivityResult(requestCode, resultCode, data);
     }
 }
+
