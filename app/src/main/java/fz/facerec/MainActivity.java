@@ -9,7 +9,6 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
-import android.provider.MediaStore;
 import android.view.Gravity;
 import android.view.View;
 import android.widget.Button;
@@ -99,7 +98,7 @@ public class MainActivity extends Activity
                     break;
             }
         }
-    };
+    }
     MyHandler handler = new MyHandler(this);
 
     @Override
@@ -108,10 +107,9 @@ public class MainActivity extends Activity
         super.onCreate(savedInstanceState);
 
         setContentView(R.layout.main_activity);
+        imageView = (ImageView)findViewById(R.id.imageView);
 
-        imageView = (ImageView) findViewById(R.id.imageView);
-
-        btnOpenFile = (Button) findViewById(R.id.Button_OpenFile);
+        btnOpenFile = (Button)findViewById(R.id.Button_OpenFile);
         btnOpenFile.setOnClickListener(new View.OnClickListener()
         {
             @Override
@@ -130,8 +128,11 @@ public class MainActivity extends Activity
             @Override
             public void onClick(View view)
             {
-                Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
-                startActivityForResult(intent, 1);
+                Intent intent = new Intent(MainActivity.this, CameraActivity.class);
+                Bundle bundle = new Bundle();
+                bundle.putSerializable("FaceRec", faceRec);
+                intent.putExtras(bundle);
+                startActivity(intent);
             }
         });
         btnDetect = (Button) findViewById(R.id.Button_Detect);
@@ -196,22 +197,6 @@ public class MainActivity extends Activity
                             break;
                         }
                         imageView.setImageBitmap(bmImg);
-                    }
-
-                    break;
-                }
-                case 1:
-                {
-                    Bundle extra = data.getExtras();
-
-                    if (extra != null)
-                    {
-                        bmImg = extra.getParcelable("data");
-                        imageView.setImageBitmap(bmImg);
-                    }
-                    else
-                    {
-                        bmImg = null;
                     }
 
                     break;

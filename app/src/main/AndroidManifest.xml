@@ -10,6 +10,10 @@
             </intent-filter>
         </activity>
 
+        <activity android:name=".CameraActivity">
+
+        </activity>
+
     </application>
     
     <uses-permission android:name="android.permission.MOUNT_UNMOUNT_FILESYSTEMS" />

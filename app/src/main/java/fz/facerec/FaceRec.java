@@ -10,7 +10,9 @@ import org.opencv.core.Rect;
 import org.opencv.core.Scalar;
 import org.opencv.objdetect.CascadeClassifier;
 
-public class FaceRec
+import java.io.Serializable;
+
+public class FaceRec implements Serializable
 {
     final private String modelPath = "/sdcard/model.xml";
     private CascadeClassifier classifier;

@@ -3,4 +3,5 @@
     <string name="Button_OpenFile">打开图片</string>
     <string name="Button_OpenCamera">照相机</string>
     <string name="Button_Detect">检测</string>
+    <string name="Button_Back">返回</string>
 </resources>
