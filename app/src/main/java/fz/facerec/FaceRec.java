@@ -1,6 +1,7 @@
 package fz.facerec;
 
 import android.graphics.Bitmap;
+import android.os.Environment;
 
 import org.opencv.android.Utils;
 import org.opencv.core.Core;
@@ -12,14 +13,22 @@ import org.opencv.objdetect.CascadeClassifier;
 
 import java.io.Serializable;
 
+class MyCascadeClassifier extends CascadeClassifier implements Serializable
+{
+	public MyCascadeClassifier(String path)
+	{
+		super(path);
+	}
+}
+
 public class FaceRec implements Serializable
 {
-    final private String modelPath = "/sdcard/model.xml";
-    private CascadeClassifier classifier;
+    final private String modelPath = Environment.getExternalStorageDirectory().getPath() + "/model.xml";
+    private MyCascadeClassifier classifier;
 
     public FaceRec()
     {
-        classifier = new CascadeClassifier(modelPath);
+        classifier = new MyCascadeClassifier(modelPath);
     }
 
     public Bitmap detect(Bitmap bmSrc)

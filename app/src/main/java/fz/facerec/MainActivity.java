@@ -50,6 +50,10 @@ public class MainActivity extends Activity
                     toast.setGravity(Gravity.BOTTOM, 0, 0);
                     toast.show();
 
+                    btnDetect.setEnabled(true);
+                    btnOpenCamera.setEnabled(true);
+                    btnOpenFile.setEnabled(true);
+
                     new Thread(new Runnable()
                     {
                         @Override
@@ -161,6 +165,10 @@ public class MainActivity extends Activity
 
             }
         });
+
+        btnDetect.setEnabled(false);
+        btnOpenCamera.setEnabled(false);
+        btnOpenFile.setEnabled(false);
     }
 
     @Override
@@ -169,6 +177,16 @@ public class MainActivity extends Activity
         super.onResume();
 
         OpenCVLoader.initAsync(OpenCVLoader.OPENCV_VERSION_2_4_10, this, mLoaderCallback);
+    }
+
+    @Override
+    protected void onPause()
+    {
+        super.onResume();
+
+        btnDetect.setEnabled(false);
+        btnOpenCamera.setEnabled(false);
+        btnOpenFile.setEnabled(false);
     }
 
     @Override
