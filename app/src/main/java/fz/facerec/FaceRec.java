@@ -31,7 +31,7 @@ public class FaceRec implements Serializable
         classifier = new MyCascadeClassifier(modelPath);
     }
 
-    public Bitmap detect(Bitmap bmSrc)
+    public void detect(Bitmap bmSrc, Bitmap bmDst)
     {
         Mat img = new Mat();
         Utils.bitmapToMat(bmSrc, img);
@@ -41,8 +41,6 @@ public class FaceRec implements Serializable
         Rect[] rects = object.toArray();
         for (int i = 0; i < rects.length; i += 2)
             Core.rectangle(img, rects[i].tl(), rects[i].br(), new Scalar(255, 0, 0));
-        Bitmap bmDst = Bitmap.createBitmap(img.width(), img.height(), Bitmap.Config.ARGB_8888);
         Utils.matToBitmap(img, bmDst);
-        return bmDst;
     }
 }

@@ -156,7 +156,8 @@ public class MainActivity extends Activity
                     @Override
                     public void run()
                     {
-                        bmResult = faceRec.detect(bmImg);
+	                    bmResult = Bitmap.createBitmap(bmImg.getWidth(), bmImg.getHeight(), bmImg.getConfig());
+                        faceRec.detect(bmImg, bmResult);
                         Message msg = new Message();
                         msg.what = FACE_DETECT_SUCCESS;
                         handler.sendMessage(msg);

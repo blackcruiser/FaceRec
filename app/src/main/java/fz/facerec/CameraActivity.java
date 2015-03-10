@@ -9,8 +9,11 @@ import android.graphics.YuvImage;
 import android.hardware.Camera;
 import android.media.Image;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Message;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
+import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.ImageView;
@@ -23,16 +26,22 @@ import org.opencv.imgproc.Imgproc;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.ref.WeakReference;
 import java.util.List;
 
 public class CameraActivity extends Activity
 {
+	final static int FACE_DETECT_SUCCESS = 0;
+
 	private Button btnBack, btnDetect;
 	private SurfaceView surfaceView;
 	private ImageView imageView;
 
 	private FaceRec faceRec;
 	private Camera camera;
+
+	private Mat mYuv, mRGB;
+	private Bitmap bmSrc, bmDst;
 
 	private class SurfaceCallback implements SurfaceHolder.Callback
 	{
@@ -42,10 +51,8 @@ public class CameraActivity extends Activity
 			camera = Camera.open();
 			Camera.Parameters cameraParams = camera.getParameters();
 			camera.setDisplayOrientation(90);
-			camera.setPreviewCallback(new PreviewCallback());
+			camera.setOneShotPreviewCallback(new PreviewCallback());
 			cameraParams.setPreviewFormat(ImageFormat.NV21);
-
-
 
 			camera.setParameters(cameraParams);// 设置相机参数
 
@@ -62,6 +69,7 @@ public class CameraActivity extends Activity
 		@Override
 		public void surfaceDestroyed(SurfaceHolder holder)
 		{
+			camera.setPreviewCallback(null);
 			camera.stopPreview();
 			camera.release();
 		}
@@ -70,11 +78,56 @@ public class CameraActivity extends Activity
 		public void surfaceChanged(SurfaceHolder holder, int format, int width, int height)
 		{
 			Camera.Parameters cameraParams = camera.getParameters();
-
 			//consider the display orientation
-			cameraParams.setPreviewSize(width, height); // 设置预览图像大小
+			cameraParams.setPreviewSize(height, width); // 设置预览图像大小
 			camera.setParameters(cameraParams);
+
+			Camera.Size s = cameraParams.getPreviewSize();
+			mYuv = new Mat(s.height + s.height / 2, s.width, CvType.CV_8UC1);
+			mRGB = new Mat();
+			bmSrc = Bitmap.createBitmap(s.width, s.height, Bitmap.Config.ARGB_8888);
+			bmDst = Bitmap.createBitmap(bmSrc);
+
 			camera.startPreview();// 开始预览
+		}
+	}
+
+	static class MyHandler extends Handler {
+		WeakReference<CameraActivity> mActivity;
+
+		MyHandler(CameraActivity activity) {
+			mActivity = new WeakReference<CameraActivity>(activity);
+		}
+
+		@Override
+		public void handleMessage(Message msg) {
+			CameraActivity theActivity = mActivity.get();
+			switch (msg.what)
+			{
+				case CameraActivity.FACE_DETECT_SUCCESS:
+					theActivity.imageView.setImageBitmap(theActivity.bmDst);
+					break;
+				default:
+					break;
+			}
+		}
+	}
+	MyHandler handler = new MyHandler(this);
+
+	//Anonymous class can not access local varaible of parent class
+	private class FaceRecRunnable implements Runnable
+	{
+		@Override
+		public void run()
+		{
+			//Imgproc.cvtColor(mYuv, mRGB, Imgproc.COLOR_YUV2RGBA_NV21, 4);
+			Utils.matToBitmap(mRGB, bmSrc);
+			faceRec.detect(bmSrc, bmDst);
+
+			Message msg = new Message();
+			msg.what = FACE_DETECT_SUCCESS;
+			handler.sendMessage(msg);
+			camera.setOneShotPreviewCallback(new PreviewCallback());
 		}
 	}
 
@@ -83,18 +136,12 @@ public class CameraActivity extends Activity
 		@Override
 		public void onPreviewFrame(byte[] data, Camera camera)
 		{
-			Camera.Parameters cameraParams = camera.getParameters();
-			Camera.Size size = cameraParams.getPreviewSize();
-
-			Mat mYuv = new Mat(size.height + size.height / 2, size.width, CvType.CV_8UC1);
 			mYuv.put(0, 0, data);
-			Mat mRGB = new Mat();
-			Imgproc.cvtColor(mYuv, mRGB, Imgproc.COLOR_YUV2BGRA_NV21, 4);
-			Bitmap bitmap = Bitmap.createBitmap(size.width, size.height, Bitmap.Config.ARGB_8888);
-			Utils.matToBitmap(mRGB, bitmap);
-			//Mat img = new Mat();
-			//Utils.bitmapToMat(bitmap, img);
-			imageView.setImageBitmap(bitmap);
+			Imgproc.cvtColor(mYuv, mRGB, Imgproc.COLOR_YUV2RGBA_NV21, 4);
+			//Utils.matToBitmap(mRGB, bmSrc);
+			//imageView.setImageBitmap(bmSrc);
+			//camera.setOneShotPreviewCallback(new PreviewCallback());
+			new Thread(new FaceRecRunnable()).start();
 		}
 	}
 
@@ -124,8 +171,15 @@ public class CameraActivity extends Activity
 	    surfaceView.setLayoutParams(layoutParams);
 
         btnBack = (Button)findViewById(R.id.btn_Back);
+	    btnBack.setOnClickListener(new View.OnClickListener()
+	    {
+	        @Override
+	        public void onClick(View view)
+	        {
+		        finish();
+	        }
+        });
+
         btnDetect = (Button)findViewById(R.id.btn_Detect);
     }
-
-
 }
