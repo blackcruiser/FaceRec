@@ -11,27 +11,17 @@ import org.opencv.core.Rect;
 import org.opencv.core.Scalar;
 import org.opencv.objdetect.CascadeClassifier;
 
-import java.io.Serializable;
-
-class MyCascadeClassifier extends CascadeClassifier implements Serializable
-{
-	public MyCascadeClassifier(String path)
-	{
-		super(path);
-	}
-}
-
-public class FaceRec implements Serializable
+public class FaceRec
 {
     final private String modelPath = Environment.getExternalStorageDirectory().getPath() + "/model.xml";
-    private MyCascadeClassifier classifier;
+    private CascadeClassifier classifier;
 
     public FaceRec()
     {
-        classifier = new MyCascadeClassifier(modelPath);
+        classifier = new CascadeClassifier(modelPath);
     }
 
-    public void detect(Bitmap bmSrc, Bitmap bmDst)
+    public Bitmap detect(Bitmap bmSrc)
     {
         Mat img = new Mat();
         Utils.bitmapToMat(bmSrc, img);
@@ -41,6 +31,10 @@ public class FaceRec implements Serializable
         Rect[] rects = object.toArray();
         for (int i = 0; i < rects.length; i += 2)
             Core.rectangle(img, rects[i].tl(), rects[i].br(), new Scalar(255, 0, 0));
+
+        Bitmap bmDst = Bitmap.createBitmap(bmSrc.getWidth(), bmSrc.getHeight(), bmSrc.getConfig());
         Utils.matToBitmap(img, bmDst);
+
+        return bmDst;
     }
 }

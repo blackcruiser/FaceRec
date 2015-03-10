@@ -1,33 +1,31 @@
 package fz.facerec;
 
 import android.app.Activity;
-import android.content.Intent;
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.graphics.ImageFormat;
-import android.graphics.YuvImage;
 import android.hardware.Camera;
-import android.media.Image;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
+import android.view.Gravity;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.ImageView;
+import android.widget.Toast;
 
+import org.opencv.android.BaseLoaderCallback;
+import org.opencv.android.LoaderCallbackInterface;
+import org.opencv.android.OpenCVLoader;
 import org.opencv.android.Utils;
 import org.opencv.core.CvType;
 import org.opencv.core.Mat;
 import org.opencv.imgproc.Imgproc;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.lang.ref.WeakReference;
-import java.util.List;
 
 public class CameraActivity extends Activity
 {
@@ -69,9 +67,10 @@ public class CameraActivity extends Activity
 		@Override
 		public void surfaceDestroyed(SurfaceHolder holder)
 		{
-			camera.setPreviewCallback(null);
+			camera.setOneShotPreviewCallback(null);
 			camera.stopPreview();
 			camera.release();
+            camera = null;
 		}
 
 		@Override
@@ -120,14 +119,16 @@ public class CameraActivity extends Activity
 		@Override
 		public void run()
 		{
-			//Imgproc.cvtColor(mYuv, mRGB, Imgproc.COLOR_YUV2RGBA_NV21, 4);
+			Imgproc.cvtColor(mYuv, mRGB, Imgproc.COLOR_YUV2RGBA_NV21, 4);
 			Utils.matToBitmap(mRGB, bmSrc);
-			faceRec.detect(bmSrc, bmDst);
+			bmDst = faceRec.detect(bmSrc);
 
 			Message msg = new Message();
 			msg.what = FACE_DETECT_SUCCESS;
 			handler.sendMessage(msg);
-			camera.setOneShotPreviewCallback(new PreviewCallback());
+
+            if (camera != null)
+			    camera.setOneShotPreviewCallback(new PreviewCallback());
 		}
 	}
 
@@ -137,23 +138,45 @@ public class CameraActivity extends Activity
 		public void onPreviewFrame(byte[] data, Camera camera)
 		{
 			mYuv.put(0, 0, data);
-			Imgproc.cvtColor(mYuv, mRGB, Imgproc.COLOR_YUV2RGBA_NV21, 4);
-			//Utils.matToBitmap(mRGB, bmSrc);
-			//imageView.setImageBitmap(bmSrc);
-			//camera.setOneShotPreviewCallback(new PreviewCallback());
 			new Thread(new FaceRecRunnable()).start();
 		}
 	}
+
+    private BaseLoaderCallback mLoaderCallback = new BaseLoaderCallback(this)
+    {
+
+        @Override
+        public void onManagerConnected(int status)
+        {
+            switch (status)
+            {
+                case LoaderCallbackInterface.SUCCESS:
+                {
+                    Toast toast = Toast.makeText(getBaseContext(), "Load OpenCV success!", Toast.LENGTH_SHORT);
+                    toast.setGravity(Gravity.BOTTOM, 0, 0);
+                    toast.show();
+
+                    faceRec = new FaceRec();
+                }
+                break;
+                default:
+                {
+                    Toast toast = Toast.makeText(getBaseContext(), "Fail to load OpenCV library!", Toast.LENGTH_LONG);
+                    toast.setGravity(Gravity.CENTER, 0, 0);
+                    toast.show();
+
+                    finish();
+                }
+                break;
+            }
+        }
+    };
 
 
     @Override
     public void onCreate(Bundle savedInstanceState)
     {
         super.onCreate(savedInstanceState);
-
-        Intent intent = this.getIntent();
-        Bundle bundle = intent.getExtras();
-        faceRec = (FaceRec)bundle.getSerializable("FaceRec");
 
         setContentView(R.layout.camera_layout);
 
@@ -181,5 +204,13 @@ public class CameraActivity extends Activity
         });
 
         btnDetect = (Button)findViewById(R.id.btn_Detect);
+    }
+
+    @Override
+    protected void onResume()
+    {
+        super.onResume();
+
+        OpenCVLoader.initAsync(OpenCVLoader.OPENCV_VERSION_2_4_10, this, mLoaderCallback);
     }
 }

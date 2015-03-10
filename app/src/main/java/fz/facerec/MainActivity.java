@@ -53,13 +53,13 @@ public class MainActivity extends Activity
                     btnDetect.setEnabled(true);
                     btnOpenCamera.setEnabled(true);
                     btnOpenFile.setEnabled(true);
+                    faceRec = new FaceRec();
 
                     new Thread(new Runnable()
                     {
                         @Override
                         public void run()
                         {
-                            faceRec = new FaceRec();
                             Message msg = new Message();
                             msg.what = LOAD_MODEL_SUCCESS;
                             handler.sendMessage(msg);
@@ -119,7 +119,7 @@ public class MainActivity extends Activity
             @Override
             public void onClick(View view)
             {
-                Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
+                Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
                 intent.setType("image/*");
                 intent.putExtra("return-data", true);
                 startActivityForResult(intent, 0);
@@ -133,9 +133,6 @@ public class MainActivity extends Activity
             public void onClick(View view)
             {
                 Intent intent = new Intent(MainActivity.this, CameraActivity.class);
-                Bundle bundle = new Bundle();
-                bundle.putSerializable("FaceRec", faceRec);
-                intent.putExtras(bundle);
                 startActivity(intent);
             }
         });
@@ -156,8 +153,7 @@ public class MainActivity extends Activity
                     @Override
                     public void run()
                     {
-	                    bmResult = Bitmap.createBitmap(bmImg.getWidth(), bmImg.getHeight(), bmImg.getConfig());
-                        faceRec.detect(bmImg, bmResult);
+                        bmResult = faceRec.detect(bmImg);
                         Message msg = new Message();
                         msg.what = FACE_DETECT_SUCCESS;
                         handler.sendMessage(msg);
@@ -178,16 +174,6 @@ public class MainActivity extends Activity
         super.onResume();
 
         OpenCVLoader.initAsync(OpenCVLoader.OPENCV_VERSION_2_4_10, this, mLoaderCallback);
-    }
-
-    @Override
-    protected void onPause()
-    {
-        super.onResume();
-
-        btnDetect.setEnabled(false);
-        btnOpenCamera.setEnabled(false);
-        btnOpenFile.setEnabled(false);
     }
 
     @Override
